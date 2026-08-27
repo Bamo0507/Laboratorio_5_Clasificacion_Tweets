@@ -4,3 +4,5 @@ nltk
 matplotlib
 seaborn
 jupyter
+sklearn
+torch

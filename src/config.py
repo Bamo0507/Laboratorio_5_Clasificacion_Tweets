@@ -19,6 +19,9 @@ RUTA_INTEGRIDAD   = DIR_PROCESSED / "03_integridad.csv"       # <- 03_integridad
 RUTA_FEATURES     = DIR_PROCESSED / "04_features_crudas.csv"  # <- 04_features_crudas.py
 RUTA_TEXTO        = DIR_PROCESSED / "05_texto_limpio.csv"     # <- 05_limpieza_texto.py
 RUTA_FINAL        = DIR_PROCESSED / "tweets_procesado.csv"    # <- 06_tokenizacion.py
+RUTA_STEMMING     = DIR_PROCESSED / "07_stemming.csv"         # <- 07_stemming.py
+RUTA_TRAIN        = DIR_PROCESSED / "train_modelado.csv"      # <- 08_particion.py
+RUTA_TEST         = DIR_PROCESSED / "test_modelado.csv"       # <- 08_particion.py
 
 # ---------------------------------------------------------------- contratos de columnas
 # Lo que DEBE traer el archivo crudo de Kaggle.
@@ -37,8 +40,13 @@ COLUMNAS_FEATURES = [
 # Las dos versiones del texto que produce la etapa 05.
 COLUMNAS_TEXTO = ["texto_limpio", "texto_sentimiento"]
 
-# Columna final de la etapa 06.
+# Columna final de la etapa 06 (lematizacion) y su equivalente con stemming (etapa 07).
 COLUMNA_TOKENS = "tokens"
+COLUMNA_TOKENS_STEM = "tokens_stem"
+
+# Particion de la etapa 08.
+PROPORCION_PRUEBA = 0.30
+SEMILLA = 123
 
 # ---------------------------------------------------------------- parametros del dominio
 # Etiquetas validas de la variable objetivo.

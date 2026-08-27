@@ -57,7 +57,7 @@ def main():
     palabras_vacias, lematizador = cargar_recursos_nltk()
 
     listas = df["texto_limpio"].map(
-        lambda t: tx.tokenizar(t, palabras_vacias, lematizador, MINIMO_CARACTERES)
+        lambda t: tx.tokenizar(t, palabras_vacias, lematizador.lemmatize, MINIMO_CARACTERES)
     )
     df[config.COLUMNA_TOKENS] = listas.map(" ".join)
     df["n_tokens"] = listas.map(len)

@@ -109,12 +109,16 @@ def normalizar_para_sentimiento(texto):
     return PATRON_ESPACIOS.sub(" ", texto).strip()
 
 
-def tokenizar(texto_limpio, stopwords, lematizador, minimo_caracteres=3):
+def tokenizar(texto_limpio, stopwords, raiz, minimo_caracteres=3):
     """
     Convierte el texto ya normalizado en la lista de tokens final.
 
     Quita los tokens que son solo numeros, las stopwords y los tokens muy
-    cortos, y lematiza para poder unificar fires/fire en un mismo termino.
+    cortos, y reduce cada palabra a su raiz. El parametro raiz es la funcion
+    que hace esa reduccion, de tal forma que la etapa 06 le pasa el
+    lematizador de WordNet y la 07 le pasa el stemmer de Snowball, y ambas
+    comparten el resto del filtrado sin duplicarlo.
+
     El token de emergencia sobrevive porque no es un numero puro.
     """
     if not isinstance(texto_limpio, str) or not texto_limpio:
@@ -126,14 +130,14 @@ def tokenizar(texto_limpio, stopwords, lematizador, minimo_caracteres=3):
             continue
         if token in stopwords:
             continue
-        lema = lematizador.lemmatize(token)
-        # Se vuelve a comprobar despues de lematizar porque WordNet trata
-        # ciertos tokens como plurales y los deja numericos: 100s -> 100.
-        if PATRON_TOKEN_NUMERICO.match(lema):
+        base = raiz(token)
+        # Se vuelve a comprobar despues porque WordNet trata ciertos tokens
+        # como plurales y los deja numericos: 100s -> 100.
+        if PATRON_TOKEN_NUMERICO.match(base):
             continue
-        if len(lema) < minimo_caracteres and lema != TOKEN_EMERGENCIA:
+        if len(base) < minimo_caracteres and base != TOKEN_EMERGENCIA:
             continue
-        if lema in stopwords:
+        if base in stopwords:
             continue
-        tokens.append(lema)
+        tokens.append(base)
     return tokens

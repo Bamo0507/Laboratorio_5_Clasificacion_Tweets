@@ -21,6 +21,8 @@ ETAPAS = [
     "04_features_crudas.py",
     "05_limpieza_texto.py",
     "06_tokenizacion.py",
+    "07_stemming.py",
+    "08_particion.py",
 ]
 
 
@@ -38,7 +40,7 @@ def main():
             sys.exit(resultado.returncode)
 
     print("\n" + "#" * 70)
-    print("# Pipeline completo. Dataset final en data/processed/tweets_procesado.csv")
+    print("# Pipeline completo. train_modelado.csv y test_modelado.csv listos en data/processed/")
     print("#" * 70)
 
 
