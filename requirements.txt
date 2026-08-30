@@ -4,5 +4,8 @@ nltk
 matplotlib
 seaborn
 jupyter
-sklearn
+scikit-learn
 torch
+wordcloud
+vaderSentiment
+python-docx

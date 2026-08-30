@@ -23,6 +23,7 @@ ETAPAS = [
     "06_tokenizacion.py",
     "07_stemming.py",
     "08_particion.py",
+    "09_sentimiento.py",
 ]
 
 
