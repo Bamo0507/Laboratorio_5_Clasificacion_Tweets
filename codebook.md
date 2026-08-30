@@ -1,22 +1,36 @@
-# Codebook — `tweets_procesado.csv`
+# Codebook — dataset de modelado
 
-Diccionario de datos del dataset final del **ejercicio 3** (limpieza y preprocesamiento).
+Diccionario de datos del dataset final del pipeline, que cubre los **ejercicios 3, 8 y 10**
+(limpieza, preprocesamiento, sentimiento y variable de negatividad).
 
-**Archivo documentado:** `data/processed/tweets_procesado.csv` — 7,485 filas, 15 columnas.
+**Archivos documentados:**
+
+| Archivo | Filas | Columnas | Para qué |
+|---|---|---|---|
+| `data/processed/09_sentimiento_train.csv` | 5,239 | 21 | Entrenamiento (70%) |
+| `data/processed/09_sentimiento_test.csv` | 2,246 | 21 | Prueba (30%) |
+
+Ambos comparten el mismo esquema y solo se diferencian en qué filas les tocaron. La partición es
+estratificada por `target`, de tal forma que la tasa de desastre queda en 0.4258 en entrenamiento y
+0.4261 en prueba. Antes de partirse, el dataset completo son 7,485 filas.
+
+También quedan en disco los archivos intermedios `tweets_procesado.csv` (salida de la etapa 06) y
+`07_stemming.csv`, que son el mismo dataset sin partir y sin las columnas de sentimiento.
 
 **Cómo se genera:** corriendo `python src/run_pipeline.py`, que encadena
 
 ```
 data/raw/train.csv
-  -> 01_ingesta.py -> 02_codificacion.py -> 03_integridad.py
-  -> 04_features_crudas.py -> 05_limpieza_texto.py -> 06_tokenizacion.py
-  -> data/processed/tweets_procesado.csv
+  -> 01_ingesta.py -> 02_codificacion.py -> 03_integridad.py -> 04_features_crudas.py
+  -> 05_limpieza_texto.py -> 06_tokenizacion.py -> 07_stemming.py -> 08_particion.py
+  -> 09_sentimiento.py
+  -> data/processed/09_sentimiento_train.csv
+     data/processed/09_sentimiento_test.csv
 ```
 
 **Fuente del crudo:** competencia [*Natural Language Processing with Disaster Tweets*](https://www.kaggle.com/competitions/nlp-getting-started/data)
-de Kaggle, archivo `train.csv` (7,613 filas). El `test.csv` de la competencia no se usa
-porque no trae la variable objetivo, de tal forma que el conjunto de prueba tendrá que
-salir de una partición de este mismo archivo.
+de Kaggle, archivo `train.csv` (7,613 filas). El `test.csv` de la competencia no se usa porque no
+trae la variable objetivo, de tal forma que el conjunto de prueba sale de particionar el train.
 
 ---
 
@@ -39,8 +53,15 @@ salir de una partición de este mismo archivo.
 | `texto_sentimiento` | `str` | Versión conservadora del texto. | **Derivada** en la etapa 05. Conserva puntuación, mayúsculas y negaciones. Alimenta el análisis de sentimiento del ejercicio 8. |
 | `tokens` | `str` | Tokens finales separados por espacio. | **Derivada** en la etapa 06. Sin stopwords, sin números y lematizados. 3 faltantes, que son tweets que quedaron sin ningún token. |
 | `n_tokens` | `int64` | Cantidad de tokens de la columna anterior. | **Derivada.** Rango 0 a 21, media 8.37. Vale `0` en los 3 tweets sin tokens. |
+| `tokens_stem` | `str` | Los mismos tokens pero reducidos con stemming en lugar de lematización. | **Derivada** en la etapa 07. Existe para poder comparar ambos enfoques en el ejercicio 6. 3 faltantes, los mismos tweets que quedaron sin tokens. |
+| `n_palabras_positivas` | `int64` | Palabras del tweet que están en el léxico de VADER con signo positivo. | **Derivada** en la etapa 09. Rango 0 a 7, media 0.56. |
+| `n_palabras_negativas` | `int64` | Palabras del tweet que están en el léxico de VADER con signo negativo. | **Derivada** en la etapa 09. Rango 0 a 13, media 0.93. |
+| `sentimiento_compound` | `float64` | Puntaje compuesto de VADER, que resume la polaridad del tweet. | **Derivada** en la etapa 09. Rango observado -0.9883 a 0.9730, media -0.1444. Escala teórica [-1, 1]. |
+| `negatividad` | `float64` | Proporción del tweet que VADER considera negativa. Es la variable del ejercicio 10. | **Derivada** en la etapa 09, componente `neg` de VADER. Rango 0 a 1, media 0.1591. |
+| `sentimiento_clase` | `str` | Clasificación del tweet en positivo, negativo o neutro. | **Derivada** en la etapa 09 a partir de `sentimiento_compound`. Valores: `negativo` (3,697), `positivo` (1,937), `neutro` (1,851). |
 
-Vocabulario final: **12,735 términos distintos**.
+Vocabulario con lematización: **12,735 términos distintos**. Con stemming: **10,958**, es decir un
+14% más compacto.
 
 ---
 
@@ -107,6 +128,41 @@ a propósito puntuación, mayúsculas y negaciones.
 - **Tokens de menos de 3 caracteres eliminados**, con excepción de `emergencia911`.
 - **Lematización con WordNet** para poder unificar `fires` y `fire` en un mismo término.
 
+### Etapa 07 — variante con stemming
+
+- **Se aplica el `SnowballStemmer` de NLTK** sobre `texto_limpio`, con exactamente el mismo filtrado
+  que usó la lematización, ya que la función `tokenizar` de `src/texto.py` recibe la reducción como
+  parámetro y por eso ambas variantes comparten el resto del proceso.
+- La lematización devuelve una palabra real, es decir `fires` queda como `fire`, mientras que el
+  stemming corta a la raíz aunque no exista, de tal forma que `disaster` queda como `disast`. Cuál
+  funciona mejor depende del corpus, y por eso no se elige de antemano sino que se comparan las dos
+  en el ejercicio 6.
+
+### Etapa 08 — partición entrenamiento / prueba
+
+- **Partición estratificada 70/30 por `target`**, con semilla fija en `config.SEMILLA`.
+- Se hace en el pipeline y no dentro de los notebooks para poder garantizar que todos los modelos
+  del ejercicio 6 se evalúan sobre exactamente las mismas filas, ya que si cada quien partiera por
+  su cuenta las métricas no serían comparables entre sí.
+
+### Etapa 09 — análisis de sentimiento
+
+- **Se puntúa con VADER** (`vaderSentiment`) y no con TextBlob, porque su léxico y sus reglas están
+  hechos para texto de redes sociales: ponderan mayúsculas, puntuación repetida, negaciones e
+  intensificadores.
+- **Se corre sobre `texto_sentimiento` y no sobre `tokens`**, ya que VADER necesita mayúsculas,
+  puntuación y negaciones intactas. Usar la versión agresiva invertiría el sentido de cada frase
+  negada, dado que `not` se elimina como stopword.
+- **Al contar palabras del léxico se busca el token completo antes de recortarle la puntuación**,
+  porque los emoticones están en el léxico con sus signos incluidos y recortarlos los destruiría, de
+  tal forma que `:)` se volvería `:`.
+- La clasificación en positivo, negativo o neutro sale del puntaje compuesto y no del conteo crudo
+  de palabras, ya que el compuesto aplica las reglas de negación e intensidad que el conteo ignora.
+  Por ejemplo, `not good` suma una palabra positiva en el conteo y sin embargo el compuesto lo
+  puntúa como negativo.
+- La lógica vive en `src/sentimiento.py` para que la etapa y el notebook usen la misma, pues estuvo
+  duplicada y las dos copias divergieron.
+
 ---
 
 ## Política de valores faltantes
@@ -121,6 +177,7 @@ Los faltantes del dataset final se clasifican así:
 |---|---|---|
 | `keyword` | 56 | **Ausente en el origen.** Kaggle no asignó palabra clave a esos tweets, de tal forma que `NaN` es la representación honesta. |
 | `location` | 2,472 | **Ausente en el origen.** El usuario no declaró ubicación en su perfil. |
+| `tokens_stem` | 3 | **Propagación correcta.** Los mismos tweets que quedaron sin `tokens`. |
 | `tokens` | 3 | **Propagación correcta.** Son tweets cuyo contenido era enteramente URLs, menciones o stopwords, así que al limpiarlos no quedó ningún token. No es un faltante nuevo sino la consecuencia esperada de la limpieza. Su `n_tokens` vale `0`. |
 
 Las 128 filas descartadas en la etapa 03 no se fueron por faltantes sino por violar una

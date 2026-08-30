@@ -22,6 +22,8 @@ RUTA_FINAL        = DIR_PROCESSED / "tweets_procesado.csv"    # <- 06_tokenizaci
 RUTA_STEMMING     = DIR_PROCESSED / "07_stemming.csv"         # <- 07_stemming.py
 RUTA_TRAIN        = DIR_PROCESSED / "train_modelado.csv"      # <- 08_particion.py
 RUTA_TEST         = DIR_PROCESSED / "test_modelado.csv"       # <- 08_particion.py
+RUTA_SENTIMIENTO_TRAIN = DIR_PROCESSED / "09_sentimiento_train.csv"  # <- 09_sentimiento.py
+RUTA_SENTIMIENTO_TEST  = DIR_PROCESSED / "09_sentimiento_test.csv"   # <- 09_sentimiento.py
 
 # ---------------------------------------------------------------- contratos de columnas
 # Lo que DEBE traer el archivo crudo de Kaggle.
